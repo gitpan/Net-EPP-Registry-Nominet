@@ -12,4 +12,5 @@ t/register.t
 t/release.t
 t/renew.t
 gpl.txt
+Changes
 META.yml                                 Module meta-data (added by MakeMaker)

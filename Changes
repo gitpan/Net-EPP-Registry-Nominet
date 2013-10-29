@@ -1,0 +1,8 @@
+0.00_01 2013-10-29
+
+    - Better exception handling in the tests if the client IP address is not
+	  registered to use the testbed.
+
+0.00 2013-10-18
+
+    - Initial Release

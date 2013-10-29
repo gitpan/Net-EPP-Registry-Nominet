@@ -10,9 +10,9 @@
 #        NOTES:  Must have set $NOMTAG and $NOMPASS env vars first
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: connect.t,v 1.1.1.1 2013/10/21 14:04:54 pete Exp $
+#      VERSION:  $Id: connect.t,v 1.2 2013/10/29 21:40:04 pete Exp $
 #      CREATED:  04/02/13 11:54:43
-#     REVISION:  $Revision: 1.1.1.1 $
+#     REVISION:  $Revision: 1.2 $
 #===============================================================================
 
 use strict;
@@ -35,11 +35,20 @@ my %newargs = (
 );
 
 $epp = Net::EPP::Registry::Nominet->new (%newargs);
-ok (defined ($epp) && $epp->{def_years} == 2, 'def_years validation');
+SKIP: {
+	skip "No access to testbed from this IP address", 3 unless defined $epp;
 
-$epp = new_ok ('Net::EPP::Registry::Nominet', [ test => 1, login => 0, debug => $ENV{DEBUG_TEST} || 0 ] );
+	ok ($epp->{def_years} == 2, 'def_years validation');
 
-is ($epp->login ('nosuchuser', 'nosuchpass'), undef, 'Login with duff user');
+	$epp = new_ok ('Net::EPP::Registry::Nominet', [
+		test  => 1,
+		login => 0,
+		debug => $ENV{DEBUG_TEST} || 0 ]
+	);
+
+	is ($epp->login ('nosuchuser', 'nosuchpass'), undef,
+		'Login with duff user');
+}
 
 SKIP: {
 	skip "NOMTAG/NOMPASS not set", 7 unless (defined $ENV{NOMTAG} and defined $ENV{NOMPASS});

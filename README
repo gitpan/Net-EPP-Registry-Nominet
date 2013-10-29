@@ -1,7 +1,7 @@
 
-Net::EPP::Registry::Nominet version 0.00
+Net::EPP::Registry::Nominet version 0.00_01
 
-Released: 18th October 2013
+Released: 29th October 2013
 
 
 INSTALLATION
@@ -38,6 +38,13 @@ This module extends Net::EPP::Simple to cope with the unorthodox EPP
 implementation currently in use by Nominet, the registry with
 responsibility for the .uk namespace. It is intended to have a
 compatible interface to Net::EPP::Simple so far as is practical.
+
+
+NEW IN THIS VERSION
+-------------------
+
+Better exception handling in the tests if the client IP address is not
+registered to use the testbed.
 
 
 DOCUMENTATION
