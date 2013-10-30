@@ -1,3 +1,8 @@
+0.00_02 2013-10-30
+
+    - Improved documentation in POD.
+	- Removed old, commented-out code.
+
 0.00_01 2013-10-29
 
     - Better exception handling in the tests if the client IP address is not

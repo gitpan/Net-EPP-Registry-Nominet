@@ -1,4 +1,4 @@
-#    $Id: Nominet.pm,v 1.2 2013/10/29 21:40:34 pete Exp $
+#    $Id: Nominet.pm,v 1.3 2013/10/30 17:03:26 pete Exp $
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ use vars qw($Error $Code $Message);
 BEGIN {
 	use Exporter ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK);
-	$VERSION    = '0.00_01';
+	$VERSION    = '0.00_02';
 	@ISA        = qw(Net::EPP::Simple Exporter);
 	@EXPORT     = qw();
 	@EXPORT_OK  = qw();
@@ -60,8 +60,8 @@ jobs
 	use Net::EPP::Registry::Nominet;
 
 	my $epp = Net::EPP::Registry::Nominet->new (
-		user	=>	'MYTAG',
-		pass	=>	'mypass'
+		user  =>  'MYTAG',
+		pass  =>  'mypass'
 	) or die ('Could not login to EPP server: ', $epp->get_error);
 
 	my $dom = 'foo.co.uk';
@@ -84,15 +84,15 @@ jobs
 
 =head1 Description
 
-Nominet is the organisation in charge of domain names under the .uk TLD.
-Historically it used cryptographically signed email communications with
-registrars to provision domains (and still does). More recently (since
-2010) it has instituted an EPP system which is sufficiently different
-from standard EPP that none of the standard modules will work seamlessly
-with it.
+L<Nominet|http://www.nominet.org.uk/> is the organisation in charge of
+domain names under the .uk TLD.  Historically it used cryptographically
+signed email communications with registrars to provision domains (and
+still does). More recently (since 2010) it has instituted an EPP system
+which is sufficiently different from standard EPP that none of the
+standard modules will work seamlessly with it.
 
 This module exists to provide a client interface to the Nominet EPP
-servers. It is a subclass of C<Net::EPP::Simple> and aims to adhere
+servers. It is a subclass of L<Net::EPP::Simple> and aims to adhere
 closely to that interface style so as to act as a drop-in replacement.
 
 =cut
@@ -106,8 +106,8 @@ END {}
 =head1 Constructor
 
 	my $epp = Net::EPP::Registry::Nominet->new (
-		user	=>	'MYTAG',
-		pass	=>	'mypass'
+		user  =>  'MYTAG',
+		pass  =>  'mypass'
 	) or die ('Could not login to EPP server: ', $epp->get_error);
 
 The constructor for C<Net::EPP::Registry::Nominet> has the same
@@ -122,8 +122,9 @@ exceptions:
 
 =item * C<timeout> defaults to 5 (seconds).
 
-=item * C<debug> specifies the verbosity. 0 = silent, 1 = shows
-warnings/errors, 2 = shows frames in over-ridden methods. Default is 0.
+=item * C<debug> specifies the verbosity. 0 = almost silent, 1 = displays
+warnings/errors, 2 = displays EPP frames in over-ridden methods. Default
+is 0.
 
 =item * C<def_years> changes the default number of years for
 registrations and renewals from the system default of 2. This is only
@@ -219,10 +220,11 @@ The client can perform a standalone EPP Login if required.
 	$epp->login ($username, $password, $opt_ref)
 		or die ("Could not login: ", $epp->get_reason);
 
-Currently the only supported option is 'nominet_schemas' which should be
-set if the user requires the old, deprecated Nominet EPP schemas. These
-will be removed from the Live systems before August 2013, so should not be
-retained in production code.
+The optional third argument, C<$opt_ref>, is a hash ref of login
+options. Currently the only supported option is 'nominet_schemas' which
+should be set to a true value if the user requires the old, deprecated
+Nominet EPP schemas. These were removed from the Live systems before
+August 2013, so should not be retained in production code.
 
 =cut
 
@@ -334,87 +336,26 @@ sub _check {
 	return ($response->getNode($spec[1], $key)->getAttribute('avail'), $count);
 }
 
-=head1 Spec
-
-This utility method takes a 'type' argument and returns a three-valued
-array of type, XMLNS and XSI for use with various frame and XML
-routines. It is not expected to be called independently by the user but
-is here if you need it.
-
-Type can currently be one of: domain, contact, contact-ext,
-host, l (for list), u (for unrenew), r (for release)
-
-	my @spec = $epp->spec ('domain');
-
-=cut
-
-sub spec {
-	my ($self, $type) = @_;
-
-	return '' unless $type;
-
-	if ($type eq 'domain') {
-		return ($type,
-			"urn:ietf:params:xml:ns:domain-$EPPVer",
-			"urn:ietf:params:xml:ns:domain-$EPPVer domain-$EPPVer.xsd");
-	}
-	if ($type eq 'domain-ext' or $type eq 'domain-nom-ext') {
-		return ($type,
-			'http://www.nominet.org.uk/epp/xml/domain-nom-ext-1.2',
-			'http://www.nominet.org.uk/epp/xml/domain-nom-ext-1.2 domain-nom-ext-1.2.xsd');
-	}
-	if ($type eq 'contact') {
-		return ($type,
-			"urn:ietf:params:xml:ns:contact-$EPPVer",
-			"urn:ietf:params:xml:ns:contact-$EPPVer contact-$EPPVer.xsd");
-	}
-	if ($type eq 'contact-ext' or $type eq 'contact-nom-ext') {
-		return ($type,
-			'http://www.nominet.org.uk/epp/xml/contact-nom-ext-1.0',
-			'http://www.nominet.org.uk/epp/xml/contact-nom-ext-1.0 contact-nom-ext-1.0.xsd');
-	}
-	if ($type eq 'host') {
-		return ($type,
-			"urn:ietf:params:xml:ns:host-$EPPVer",
-			"urn:ietf:params:xml:ns:host-$EPPVer host-$EPPVer.xsd");
-	}
-	if ($type eq 'l') {
-		return ($type,
-			"http://www.nominet.org.uk/epp/xml/std-list-1.0",
-			"http://www.nominet.org.uk/epp/xml/std-list-1.0 std-list-1.0.xsd");
-	}
-	if ($type eq 'u') {
-		return ($type,
-			"http://www.nominet.org.uk/epp/xml/std-unrenew-1.0",
-			"http://www.nominet.org.uk/epp/xml/std-unrenew-1.0 std-unrenew-1.0.xsd");
-	}
-	if ($type eq 'r') {
-		return ($type,
-			"http://www.nominet.org.uk/epp/xml/std-release-1.0",
-			"http://www.nominet.org.uk/epp/xml/std-release-1.0 std-release-1.0.xsd");
-	}
-}
-
 =head1 Domain Renewal
 
 You can renew an existing domain with the renew() command.
 
 	my $new_expiry = $epp->renew ({
-		name => $domstr,
-		cur_exp_date => $old_expiry,
-		period => $years
+		name          => $domstr,
+		cur_exp_date  => $old_expiry,
+		period        => $years
 	});
 
-On success, $new_expiry contains the new expiry date in long form.
+On success, C<$new_expiry> contains the new expiry date in long form.
 Otherwise returns undef.
 
-$domstr is just the domain as a string, eg. "foo.co.uk".
+C<$domstr> is just the domain as a string, eg. "foo.co.uk".
 
 If you do not specify the old expiry date in your request, the system
 will attempt to retrieve it from the registry first. It should be in the
 form YYYY-MM-DD.
 
-$years must be an integer between 1 and 10 inclusive and defaults to any
+C<$years> must be an integer between 1 and 10 inclusive and defaults to any
 value specified in the constructor or 2 otherwise. 10 year renewals must
 be post-expiry.
 
@@ -469,11 +410,11 @@ You can unrenew a list of recently renewed domains with the unrenew() command.
 
 	my $new_expiry = $epp->unrenew ($domstr, $domstr2, ... )
 
-On success, $new_expiry is an hashref with the domain names as keys and
+On success, C<$new_expiry> is an hashref with the domain names as keys and
 the new expiry dates in long form as the values.
 Otherwise returns an empty hashref or undef on complete failure.
 
-$domstr, $domstr2 are just the domains as a string, eg. "foo.co.uk".
+C<$domstr>, C<$domstr2> are just the domains as a string, eg. "foo.co.uk".
 
 =cut
 
@@ -567,12 +508,12 @@ registration.
 
 
 	my $domain = {
-		name	=>	"foo.co.uk",
-		period	=>	"5",
-		registrant	=>	"ABC123",
-		nameservers	=>	{
-			'nsname0'	=>	"ns1.bar.co.uk",
-			'nsname1'	=>	"ns2.bar.co.uk"
+		name         => "foo.co.uk",
+		period       => "5",
+		registrant   => "ABC123",
+		nameservers  => {
+			'nsname0'  => "ns1.bar.co.uk",
+			'nsname1'  => "ns2.bar.co.uk"
 		}
 	};
 	my ($res) = $epp->create_domain ($domain);
@@ -588,10 +529,10 @@ in this hashref are populated so far.
 
 To register a new domain to a new registrant you can either create the
 registrant first to get the ID or you can replace the 'registrant' value
-in the $domain with a hashref of the registrant and create_domain() will
+in the C<$domain> with a hashref of the registrant and C<create_domain()> will
 create the registrant first as a handy shortcut.
 
-The alias register() can be used in place of create_domain().
+The alias C<register()> can be used in place of C<create_domain()>.
 
 =cut
 
@@ -680,32 +621,32 @@ To register an account, you will need to create a hashref of the
 account like this to perform the registration.
 
 	my $registrant = {
-			id			=>	"ABC123",
-			name		=>	'Example Company',
-			'trad-name'	=>	'Examples4u',
-			'type'		=>	'LTD',
-			'co-no'		=>	'12345678',
-			'opt-out'	=>	'n',
-			'postalInfo'=>	{ loc => {
-				'name'		=>	'Arnold N Other',
-				'org'		=>	'Example Company',
-				'addr'		=>	{
-					'street'	=>	['555 Carlton Heights'],
-					'city'		=>	'Testington',
-					'sp'		=>	'Testshire',
-					'pc'		=>	'XL99 9XL',
-					'cc'		=>	'GB'
-				}
-			}},
-			'voice'		=>	'+44.1234567890',
-			'email'		=>	'a.n.other@example.com'
+		'id'          => "ABC123",
+		'name'        => 'Example Company',
+		'trad-name'   => 'Examples4u',
+		'type'        => 'LTD',
+		'co-no'	      => '12345678',
+		'opt-out'     => 'n',
+		'postalInfo'  => { loc => {
+			'name'  => 'Arnold N Other',
+			'org'   => 'Example Company',
+			'addr'  => {
+				'street'  => ['555 Carlton Heights'],
+				'city'    => 'Testington',
+				'sp'      => 'Testshire',
+				'pc'      => 'XL99 9XL',
+				'cc'      => 'GB'
+			}
+		}},
+		'voice'  => '+44.1234567890',
+		'email'  => 'a.n.other@example.com'
 	};
 	my $res = $epp->create_contact ($registrant) or die $epp->get_reason;
 
 It returns undef on failure, 1 on success. The new id must be unique
 (across the entire registry) otherwise the creation will fail. If no id
 is specified a random one will be used instead and can subsequently be
-extracted as $registrant->{id} in the calling code.
+extracted as C<$registrant->{id}> in the calling code.
 
 =cut
 
@@ -744,6 +685,22 @@ sub create_contact {
 	return $Code == 1000 ? 1 : undef;
 }
 
+=head2 Register nameservers
+
+To register a nameserver:
+
+	my $host = {
+		name   => "ns1.foo.co.uk",
+		addrs  => [
+			{ ip => '10.2.2.1', version => 'v4' },
+		],
+	};
+	my ($res) = $epp->create_host ($host);
+
+It returns undef on failure or 1 on success.
+
+=cut
+
 # Only need this to set $Code, which is rather annoying.
 sub create_host {
 	my ($self, $host) = @_;
@@ -751,7 +708,6 @@ sub create_host {
 	return defined $self->_send_frame ($frame);
 }
 
-# New
 sub _add_nsname {
 	my ($self, $name, $frame, $fqdn) = @_;
 	my $nsname = $frame->createElement ('domain:hostObj');
@@ -760,7 +716,6 @@ sub _add_nsname {
 	return;
 }
 
-# New
 sub _add_nsaddr {
 	my ($self, $name, $frame, $addr) = @_;
 	my $nsaddr = $frame->createElement ('host:addr');
@@ -781,21 +736,21 @@ To modify a domain, you will need to create a hashref of the
 changes like this:
 
 	my $changes = {
-		name	=>	'foo.co.uk',
-		add	=>	{ ns => ['ns1.newhost.com', 'ns2.newhost.com'] },
-		rem	=>	{ ns => ['ns1.oldhost.net', 'ns2.oldhost.net'] },
-		chg =>	{}
-		first-bill	=>	'th',
-		recur-bill	=>	'th',
-		auto-bill	=>	21,
-		auto-period	=>	5,
-		next-bill	=>	'',
-		notes	=>	['A first note', 'The second note']
+		'name'         => 'foo.co.uk',
+		'add'          => { ns => ['ns1.newhost.com', 'ns2.newhost.com'] },
+		'rem'          => { ns => ['ns1.oldhost.net', 'ns2.oldhost.net'] },
+		'chg'          => {}
+		'first-bill'   => 'th',
+		'recur-bill'   => 'th',
+		'auto-bill'    => 21,
+		'auto-period'  => 5,
+		'next-bill'    => '',
+		'notes'        => ['A first note', 'The second note']
 	};
 	my $res = $epp->update_domain ($changes) or die $epp->get_reason;
 
-This example adds and removes nameservers using the add and rem groups.
-You cannot use chg to change nameservers or extension fields. The chg
+This example adds and removes nameservers using the C<add> and C<rem> groups.
+You cannot use C<chg> to change nameservers or extension fields. The C<chg>
 entry is only used to move a domain between registrants with the same
 name.
 
@@ -805,9 +760,9 @@ first-bill, recur-bill, auto-bill, auto-period, next-bill, next-period
 and notes. All of these are scalars aside from notes which is an array
 ref.
 
-update_domain() returns undef on failure, 1 on success.
+C<update_domain()> returns undef on failure, 1 on success.
 
-There is also a convenience method modify_domain() which takes the
+There is also a convenience method C<modify_domain()> which takes the
 domain name as the first argument and the hashref of changes as the
 second argument.
 
@@ -881,20 +836,20 @@ the WHOIS opt-out etc., you will again need to create a hashref of the
 changes like this:
 
 	my $changes = {
-		'id'		=>	'ABC123',
-		'type'      =>  'FCORP',
-		'trad-name' =>  'American Industries',
-		'co-no'     =>  '99998888',
-		'opt-out'   =>  'N',
-		'postalInfo'	=>	{
-			'loc'		=>	{
-				'name'	=>	'James Johston',
-				'addr'	=>	{
-					'street'	=>	['7500 Test Plaza', 'Testingburg'],
-					'city'	=>	'Testsville',
-					'sp'	=>	'Testifornia',
-					'pc'	=>	'99999',
-					'cc'	=>	'US',
+		'id'          =>  'ABC123',
+		'type'        =>  'FCORP',
+		'trad-name'   =>  'American Industries',
+		'co-no'       =>  '99998888',
+		'opt-out'     =>  'N',
+		'postalInfo'  => {
+			'loc' => {
+				'name' => 'James Johnston',
+				'addr' => {
+					'street'  => ['7500 Test Plaza', 'Testingburg'],
+					'city'    => 'Testsville',
+					'sp'      => 'Testifornia',
+					'pc'      => '99999',
+					'cc'      => 'US',
 				}
 			}
 		},
@@ -904,11 +859,11 @@ changes like this:
 	my $res = $epp->update_contact ($changes) or die $epp->get_reason;
 
 Note that this differs from the syntax of C<Net::EPP::Simple> where that
-takes the stock add, rem and chg elements.
+takes the stock C<add>, C<rem> and C<chg> elements.
 
 It returns undef on failure, 1 on success.
 
-There is also a convenience method modify_contact() which takes the
+There is also a convenience method C<modify_contact()> which takes the
 contact id as the first argument and the hashref of changes as the
 second argument.
 
@@ -1013,19 +968,19 @@ To modify a host, you will need to create a hashref of the
 changes like this:
 
 	my $changes = {
-		name	=>	'ns1.foo.co.uk',
-		add	=>	{ 'addr' => [ { ip => '192.168.0.51', version => 'v4' } ] },
-		rem	=>	{ 'addr' => [ { ip => '192.168.0.50', version => 'v4' } ] },
+		name =>  'ns1.foo.co.uk',
+		add  =>  { 'addr' => [ { ip => '192.168.0.51', version => 'v4' } ] },
+		rem  =>  { 'addr' => [ { ip => '192.168.0.50', version => 'v4' } ] },
 	};
 	my $res = $epp->update_host ($changes) or die $epp->get_reason;
 
-This operation only adds and removes ip addresses. The chg element is not
-permitted to change addresses, so it is likely that only the add and rem
-elements will ever be needed. 
+This operation can only be used to add and remove ip addresses. The C<chg>
+element is not permitted to change addresses, so it is likely that only
+the C<add> and C<rem> elements will ever be needed.
 
 It returns undef on failure, 1 on success.
 
-There is also a convenience method modify_host() which takes the
+There is also a convenience method C<modify_host()> which takes the
 host name as the first argument and the hashref of changes as the
 second argument.
 
@@ -1070,7 +1025,7 @@ sub modify_host {
 =head1 Querying objects
 
 The interface for querying domains, contacts and hosts is the same as
-for C<Net::EPP::Simple> with the addendum that authinfo is not used at
+for L<Net::EPP::Simple> with the addendum that authinfo is not used at
 Nominet so can be ignored. The interface is simply:
 
 	my $domhash = $epp->domain_info($domainname);
@@ -1155,32 +1110,6 @@ sub _domain_infData_to_hash {
 
 	return $hash;
 }
-
-
-#sub XXX_contact_infData_to_hash {
-#	my ($self, $infData) = @_;
-#
-#	my $hash = $self->_node_to_hash ($infData, ['id', 'status', 'voice',
-#		'email', 
-#		'clID', 'crDate', 'upDate', 'roid']);
-#	
-#	$hash->{postalInfo}
-#
-#	my $extrahash = $self->_node_to_hash ($extra, ['first-bill',
-#	'recur-bill', 'auto-bill', 'next-bill', 'auto-period',
-#	'next-period', 'reg-status', 'notes', 'reseller']);
-#
-#	for (keys %$extrahash) {
-#		$hash->{$_} = $extrahash->{$_};
-#	}
-#
-#	my $hostObjs = $infData->getElementsByLocalName('hostObj');
-#	while (my $hostObj = $hostObjs->shift) {
-#		push(@{$hash->{ns}}, $hostObj->textContent);
-#	}
-#
-#	return $hash;
-#}
 
 sub _merge_contact_infData {
 	my ($self, $old, $extra) = @_;
@@ -1299,10 +1228,73 @@ sub hello {
 	return 1;
 }
 
-=head1 Utility subroutines
+=head1 Utility methods
 
-The following utility subroutines are used internally but are described
+The following utility methods are used internally but are described
 here in case they are useful for other purposes.
+
+=head2 spec
+
+This utility method takes a 'type' argument and returns a three-valued
+array of type, XMLNS and XSI for use with various frame and XML
+routines. It is not expected to be called independently by the user but
+is here if you need it.
+
+Type can currently be one of: domain, contact, contact-ext,
+host, l (for list), u (for unrenew), r (for release)
+
+	my @spec = $epp->spec ('domain');
+
+=cut
+
+sub spec {
+	my ($self, $type) = @_;
+
+	return '' unless $type;
+
+	if ($type eq 'domain') {
+		return ($type,
+			"urn:ietf:params:xml:ns:domain-$EPPVer",
+			"urn:ietf:params:xml:ns:domain-$EPPVer domain-$EPPVer.xsd");
+	}
+	if ($type eq 'domain-ext' or $type eq 'domain-nom-ext') {
+		return ($type,
+			'http://www.nominet.org.uk/epp/xml/domain-nom-ext-1.2',
+			'http://www.nominet.org.uk/epp/xml/domain-nom-ext-1.2 domain-nom-ext-1.2.xsd');
+	}
+	if ($type eq 'contact') {
+		return ($type,
+			"urn:ietf:params:xml:ns:contact-$EPPVer",
+			"urn:ietf:params:xml:ns:contact-$EPPVer contact-$EPPVer.xsd");
+	}
+	if ($type eq 'contact-ext' or $type eq 'contact-nom-ext') {
+		return ($type,
+			'http://www.nominet.org.uk/epp/xml/contact-nom-ext-1.0',
+			'http://www.nominet.org.uk/epp/xml/contact-nom-ext-1.0 contact-nom-ext-1.0.xsd');
+	}
+	if ($type eq 'host') {
+		return ($type,
+			"urn:ietf:params:xml:ns:host-$EPPVer",
+			"urn:ietf:params:xml:ns:host-$EPPVer host-$EPPVer.xsd");
+	}
+	if ($type eq 'l') {
+		return ($type,
+			"http://www.nominet.org.uk/epp/xml/std-list-1.0",
+			"http://www.nominet.org.uk/epp/xml/std-list-1.0 std-list-1.0.xsd");
+	}
+	if ($type eq 'u') {
+		return ($type,
+			"http://www.nominet.org.uk/epp/xml/std-unrenew-1.0",
+			"http://www.nominet.org.uk/epp/xml/std-unrenew-1.0 std-unrenew-1.0.xsd");
+	}
+	if ($type eq 'r') {
+		return ($type,
+			"http://www.nominet.org.uk/epp/xml/std-release-1.0",
+			"http://www.nominet.org.uk/epp/xml/std-release-1.0 std-release-1.0.xsd");
+	}
+}
+
+=head2 valid_voice
 
 The valid_voice method takes one argument which is a
 string representing a telephone number and returns 1 if it is a valid
@@ -1324,7 +1316,7 @@ sub valid_voice {
 	return 1;
 }
 
-=pod
+=head2 random_id
 
 The random_id method takes an integer as its optional argument and
 returns a random string suitable for use as an ID. When creating a new
@@ -1449,7 +1441,19 @@ class) to avoid these warnings.
 
 =head1 See Also
 
-L<Net::EPP::Simple>
+=over
+
+=item * L<Net::EPP::Simple>
+
+=item * Nominet's L<EPP
+Documentation|http://registrars.nominet.org.uk/registration-and-domain-management/registrar-systems/epp>
+
+=item * The EPP RFCs: L<RFC 5730|http://tools.ietf.org/html/rfc5730>, 
+L<RFC 5731|http://tools.ietf.org/html/rfc5731>,
+L<RFC 5732|http://tools.ietf.org/html/rfc5732> and
+L<RFC 5733|http://tools.ietf.org/html/rfc5733>.
+
+=back
 
 =head1 Author
 

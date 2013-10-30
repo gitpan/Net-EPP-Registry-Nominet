@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Net-EPP-Registry-Nominet
-version:            0.00_01
+version:            0.00_02
 abstract:           EPP client code for Nominet
 author:
     - Pete Houston (cpan@openstrike.co.uk)
