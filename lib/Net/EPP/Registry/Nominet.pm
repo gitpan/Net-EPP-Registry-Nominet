@@ -1,4 +1,4 @@
-#    $Id: Nominet.pm,v 1.3 2013/10/30 17:03:26 pete Exp $
+#    $Id: Nominet.pm,v 1.4 2013/11/06 10:23:29 pete Exp $
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ use vars qw($Error $Code $Message);
 BEGIN {
 	use Exporter ();
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK);
-	$VERSION    = '0.00_02';
+	$VERSION    = '0.01';
 	@ISA        = qw(Net::EPP::Simple Exporter);
 	@EXPORT     = qw();
 	@EXPORT_OK  = qw();
@@ -410,7 +410,7 @@ You can unrenew a list of recently renewed domains with the unrenew() command.
 
 	my $new_expiry = $epp->unrenew ($domstr, $domstr2, ... )
 
-On success, C<$new_expiry> is an hashref with the domain names as keys and
+On success, C<$new_expiry> is a hashref with the domain names as keys and
 the new expiry dates in long form as the values.
 Otherwise returns an empty hashref or undef on complete failure.
 
@@ -646,7 +646,7 @@ account like this to perform the registration.
 It returns undef on failure, 1 on success. The new id must be unique
 (across the entire registry) otherwise the creation will fail. If no id
 is specified a random one will be used instead and can subsequently be
-extracted as C<$registrant->{id}> in the calling code.
+extracted as C<$registrant-E<gt>{id}> in the calling code.
 
 =cut
 
@@ -739,7 +739,7 @@ changes like this:
 		'name'         => 'foo.co.uk',
 		'add'          => { ns => ['ns1.newhost.com', 'ns2.newhost.com'] },
 		'rem'          => { ns => ['ns1.oldhost.net', 'ns2.oldhost.net'] },
-		'chg'          => {}
+		'chg'          => {},
 		'first-bill'   => 'th',
 		'recur-bill'   => 'th',
 		'auto-bill'    => 21,
@@ -962,9 +962,9 @@ sub modify_contact {
 	return $Code == 1000 ? 1 : undef;
 }
 
-=head2 Modify hosts
+=head2 Modify nameservers
 
-To modify a host, you will need to create a hashref of the
+To modify a nameserver, you will need to create a hashref of the
 changes like this:
 
 	my $changes = {
@@ -1201,7 +1201,7 @@ documentation seems to indicate a 60 minute timeout (as at August 2013).
 The hello method takes no arguments. It returns 1 on success, undef
 otherwise.
 
-This performs much the same function of the ping method of
+This performs much the same function as the ping method of
 Net:EPP::Simple (which could be used instead) but provides more
 extensive error handling.
 

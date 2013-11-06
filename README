@@ -1,7 +1,7 @@
 
-Net::EPP::Registry::Nominet version 0.00_02
+Net::EPP::Registry::Nominet version 0.01
 
-Released: 30th October 2013
+Released: 6th November 2013
 
 
 INSTALLATION
@@ -68,4 +68,4 @@ This software is copyright (c) 2013 by Pete Houston. It is released
 under the Artistic Licence (version 2) and the
 GNU General Public Licence (version 2).
 
-$Id: README,v 1.2 2013/10/30 17:06:39 pete Exp $
+$Id: README,v 1.3 2013/11/06 10:22:55 pete Exp $
