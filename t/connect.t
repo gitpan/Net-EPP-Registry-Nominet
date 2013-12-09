@@ -10,9 +10,9 @@
 #        NOTES:  Must have set $NOMTAG and $NOMPASS env vars first
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: connect.t,v 1.2 2013/10/29 21:40:04 pete Exp $
+#      VERSION:  $Id: connect.t,v 1.3 2013/12/09 22:24:26 pete Exp $
 #      CREATED:  04/02/13 11:54:43
-#     REVISION:  $Revision: 1.2 $
+#     REVISION:  $Revision: 1.3 $
 #===============================================================================
 
 use strict;
@@ -34,7 +34,10 @@ my %newargs = (
 	timeout	=>	[ 'dog', 'cat' ]
 );
 
-$epp = Net::EPP::Registry::Nominet->new (%newargs);
+$Net::EPP::Protocol::THRESHOLD = 10000000; # 10 MB
+eval {
+	$epp = Net::EPP::Registry::Nominet->new (%newargs);
+};
 SKIP: {
 	skip "No access to testbed from this IP address", 3 unless defined $epp;
 

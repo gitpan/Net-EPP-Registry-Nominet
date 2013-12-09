@@ -1,3 +1,9 @@
+0.00_01 2013-12-09
+
+    - Fixed bug whereby low RAM machines might exhaust memory parsing
+      Nominet's broken error message. Requires newest Net::EPP from svn.
+      See https://rt.cpan.org/Public/Bug/Display.html?id=90776
+
 0.01 2013-11-06
 
     - Minor documentation fixes from 0.00_02.

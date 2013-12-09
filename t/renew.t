@@ -10,9 +10,9 @@
 #        NOTES:  ---
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: renew.t,v 1.1.1.1 2013/10/21 14:04:54 pete Exp $
+#      VERSION:  $Id: renew.t,v 1.2 2013/12/09 22:22:11 pete Exp $
 #      CREATED:  04/02/13 17:15:33
-#     REVISION:  $Revision: 1.1.1.1 $
+#     REVISION:  $Revision: 1.2 $
 #===============================================================================
 
 use strict;
@@ -65,7 +65,7 @@ like ($datesref->{$dom} || $reason, qr/^\d\d\d\d-|V270/, 'Multiple domain unrene
 $dom = "horatio-$tag.co.uk";
 $datesref = $epp->unrenew ($dom);
 $reason = $epp->get_reason;
-like ($reason, qr/^V273/, 'Bad domain unrenewal') or warn $reason;
+like ($reason, qr/^V265/, 'Bad domain unrenewal') or warn $reason;
 
 ok ($epp->logout(), 'Logout successful');
 

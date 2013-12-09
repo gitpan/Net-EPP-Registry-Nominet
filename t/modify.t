@@ -10,9 +10,9 @@
 #        NOTES:  ---
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: modify.t,v 1.1.1.1 2013/10/21 14:04:54 pete Exp $
+#      VERSION:  $Id: modify.t,v 1.2 2013/12/09 22:22:36 pete Exp $
 #      CREATED:  28/03/13 14:58:33
-#     REVISION:  $Revision: 1.1.1.1 $
+#     REVISION:  $Revision: 1.2 $
 #===============================================================================
 
 use strict;
@@ -50,7 +50,7 @@ my $okdomainname  = "ganymede-$tag.net.uk"; # valid
 my $baddomainname = "nominet.org.uk";    # not valid
 
 my $changes = {
-	'add' => { 'ns' => ["ns1.caliban-$tag.sch.uk", "ns1.macduff-$tag.co.uk"] },
+	'add' => { 'ns' => ["ns1.caliban-$tag.lea.sch.uk", "ns1.macduff-$tag.co.uk"] },
 	'rem' => { 'ns' => ["ns1.ganymede-$tag.net.uk"] },
 	'chg' => {}
 };
