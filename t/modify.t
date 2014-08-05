@@ -10,9 +10,9 @@
 #        NOTES:  ---
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: modify.t,v 1.2 2013/12/09 22:22:36 pete Exp $
+#      VERSION:  $Id: modify.t,v 1.3 2014/08/04 18:16:12 pete Exp $
 #      CREATED:  28/03/13 14:58:33
-#     REVISION:  $Revision: 1.2 $
+#     REVISION:  $Revision: 1.3 $
 #===============================================================================
 
 use strict;
@@ -130,12 +130,15 @@ for my $addr (@{$info->{addrs}}) {
 	if ($addr->{version} and $addr->{version} eq 'v6') { $oldv6 = $addr->{addr}; last; }
 }
 if ($oldv6) {
+	my $newv6 = $oldv6;
+	$newv6 =~ s/(\d)$/($1+1)%2/e;
 	$changes = {
-		'rem' => { 'addr' => [ { ip => $oldv6, version => "v6" } ] }
+		'rem' => { 'addr' => [ { ip => $oldv6, version => "v6" } ] },
+		'add' => { 'addr' => [ { ip => $newv6, version => "v6" } ] },
 	};
 } else {
 	$changes = {
-		'add' => { 'addr' => [ { ip => "1080:0:0:0:8:800:200C:417B", version => "v6" } ] },
+		'add' => { 'addr' => [ { ip => "1080:0:0:0:8:800:200C:4170", version => "v6" } ] },
 	};
 }
 

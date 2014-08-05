@@ -1,4 +1,4 @@
-#    $Id: Nominet.pm,v 1.5 2013/12/09 22:34:06 pete Exp $
+#    $Id: Nominet.pm,v 1.6 2014/08/04 17:42:21 pete Exp $
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -29,14 +29,10 @@ use constant EPP_XMLNS	=> 'urn:ietf:params:xml:ns:epp-1.0';
 use vars qw($Error $Code $Message);
 
 BEGIN {
-	use Exporter ();
-	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK);
-	$VERSION    = '0.01_01';
+	our ($VERSION, @ISA);
+	$VERSION    = '0.01_02';
 	@ISA        = qw(Net::EPP::Simple Exporter);
-	@EXPORT     = qw();
-	@EXPORT_OK  = qw();
 }
-our @EXPORT_OK;
 
 # file-scoped lexicals
 my $Host      = 'epp.nominet.org.uk';
@@ -136,8 +132,8 @@ Nominet prohibits it).
 =item * There is no facility for a config file but this may be added in
 future versions.
 
-=item * There are no SSL certificate options but these may be added in
-future versions.
+=item * There is no facility for supplying SSL client certificates
+because there is no support for them in the Nominet EPP server.
 
 =back
 
@@ -169,6 +165,14 @@ sub new {
 		$params{host} = $Host;
 	}
 	$params{timeout}	= (int($params{timeout} || 0) > 0 ? $params{timeout} : 5);
+	if ($params{ssl} and $params{verify}) {
+		$params{SSL_ca_file}      ||= $params{ca_file};
+		$params{SSL_ca_path}      ||= $params{ca_path};
+		$params{SSL_verify_mode}  =   0x01;
+	}
+	if ($params{ssl} and $params{ciphers}) {
+		$params{SSL_cipher_list} = $params{ciphers};
+	}
 
 	my $self = Net::EPP::Client->new(%params);
 	unless ($self->{timeout}) { $self->{timeout} = $params{timeout}; }
@@ -193,10 +197,11 @@ sub new {
 	bless($self, $class);
 
 	# Connect to server
-	eval { $self->{greeting} = $self->connect; };
+	eval { $self->{greeting} = $self->connect (%params); };
 	unless ($self->{greeting}) {
 		$self->{connected} = 0;
 		warn 'No greeting returned: cannot continue';
+		warn ($@) if $@;
 		return undef;
 	}
 	$self->{connected}      = 1;
@@ -266,7 +271,8 @@ sub login {
 		for my $ns (qw/domain-nom-ext-1.2 contact-nom-ext-1.0
 		std-notifications-1.2 std-warning-1.1 std-contact-id-1.0
 		std-release-1.0 std-handshake-1.0 nom-abuse-feed-1.0
-		std-fork-1.0 std-list-1.0 std-locks-1.0 std-unrenew-1.0/) {
+		std-fork-1.0 std-list-1.0 std-locks-1.0 std-unrenew-1.0
+		nom-direct-rights-1.0/) {
 			my $el = $login->createElement('extURI');
 			$el->appendText("http://www.nominet.org.uk/epp/xml/$ns");
 			$ext->appendChild($el);
@@ -288,13 +294,17 @@ sub login {
 =head1 Availability checks
 
 The availability checks work similarly to C<Net::EPP::Simple> except
-that they return an array with two elements. The first element is the
+that they return an array with three elements. The first element is the
 availability indicator as before (0 if provisioned, 1 if available,
 undef on error) and the second element is the abuse counter which shows
 how many more such checks you may run. This counter is only relevant
 for check_domain and will always be undef for the other check methods.
+The third element is an indicator of the rights to register the domain.
+This is only relevant for check_domain and if the domain being checked
+is a second-level domain in which case the value will be the domain with
+the rights and undef if there are no rights.
 
-	my ($avail, $left) = $epp->check_domain ("foo.co.uk");
+	my ($avail, $left, $rights) = $epp->check_domain ("foo.uk");
 	$avail = $epp->check_contact ("ABC123");
 	$avail = $epp->check_host ("ns0.foo.co.uk");
 
@@ -333,7 +343,13 @@ sub _check {
 	$count = $extra->getAttribute('abuse-limit') if defined $extra;
 	warn "Remaining checks = $count\n" if ($Debug and defined $count);
 
-	return ($response->getNode($spec[1], $key)->getAttribute('avail'), $count);
+	my $rights = undef;
+	if ($type eq 'domain' and $identifier !~ /\..*\./) {
+		$extra  = $response->getNode("nom-direct-rights:ror")->firstChild;
+		$rights = $extra->toString if defined $extra;
+	}
+
+	return ($response->getNode($spec[1], $key)->getAttribute('avail'), $count, $rights);
 }
 
 =head1 Domain Renewal

@@ -10,9 +10,9 @@
 #        NOTES:  ---
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: check.t,v 1.1.1.1 2013/10/21 14:04:54 pete Exp $
+#      VERSION:  $Id: check.t,v 1.3 2014/08/04 17:32:02 pete Exp $
 #      CREATED:  04/02/13 17:15:33
-#     REVISION:  $Revision: 1.1.1.1 $
+#     REVISION:  $Revision: 1.3 $
 #===============================================================================
 
 use strict;
@@ -21,7 +21,7 @@ use warnings;
 use Test::More;
 
 if (defined $ENV{NOMTAG} and defined $ENV{NOMPASS}) {
-	plan tests => 9;
+	plan tests => 17;
 } else {
 	plan skip_all => 'Cannot connect to testbed without NOMTAG and NOMPASS';
 }
@@ -41,17 +41,32 @@ $Net::EPP::Registry::Nominet::Error;
 BAIL_OUT ("Cannot login to EPP server") if
 		$Net::EPP::Registry::Nominet::Error;
 
-my $tag = lc $ENV{NOMTAG};
-my $res = undef;
-my $abuse = undef;
+my $tag     = lc $ENV{NOMTAG};
+my $res     = undef;
+my $abuse   = undef;
+my $rights  = undef;
 
 # Check domains
 ($res, $abuse) = $epp->check_domain ("duncan-$tag.co.uk");
 is ($res, 0, 'Existent domain check');
+like ($abuse, qr/^[0-9]+$/, 'Existent domain check abuse counter');
+my $abuseval = $abuse;
 note "Abuse = $abuse\n" if $ENV{DEBUG_TEST};
-($res, $abuse) = $epp->check_domain ("seward-$tag.sch.uk");
+($res, $abuse) = $epp->check_domain ("dlfkgshklghsld-$tag.co.uk");
 is ($res, 1, 'Non-existent domain check');
+is ($abuse, --$abuseval, 'Non-existent domain check abuse counter');
 note "Abuse = $abuse\n" if $ENV{DEBUG_TEST};
+($res, $abuse, $rights) = $epp->check_domain ("dlfkgshklghsld-$tag.uk");
+is ($res, 1, 'Non-existent .uk domain check');
+is ($abuse, --$abuseval, 'Non-existent .uk domain check abuse counter');
+is ($rights, undef, 'Non-existent .uk domain rights check without rights');
+note "Abuse = $abuse\n" if $ENV{DEBUG_TEST};
+($res, $abuse, $rights) = $epp->check_domain ("duncan-$tag.uk");
+is ($res, 1, 'Non-existent .uk domain check with rights');
+is ($abuse, --$abuseval, 'Non-existent .uk domain check with rights abuse counter');
+is ($rights, "duncan-$tag.co.uk", 'Non-existent .uk domain rights check with rights');
+note "Abuse = $abuse\n" if $ENV{DEBUG_TEST};
+
 
 # Check contacts
 # First get a valid contact ID, since they change in the testbed between
@@ -64,7 +79,6 @@ is ($res, 1, 'Non-existent contact check');
 # Check hosts
 ($res, $abuse) = $epp->check_host ("ns1.oberon-$tag.co.uk");
 is ($res, 0, 'Existent host check');
-# XXX This next test fails - raised with James at Nominet 04/04/13
 ($res, $abuse) = $epp->check_host ("nothere.oberon-$tag.co.uk");
 is ($res, 1, 'Non-existent host check');
 

@@ -10,15 +10,15 @@
 #        NOTES:  Must have set $NOMTAG and $NOMPASS env vars first
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: connect.t,v 1.3 2013/12/09 22:24:26 pete Exp $
+#      VERSION:  $Id: connect.t,v 1.5 2014/08/04 17:33:14 pete Exp $
 #      CREATED:  04/02/13 11:54:43
-#     REVISION:  $Revision: 1.3 $
+#     REVISION:  $Revision: 1.5 $
 #===============================================================================
 
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 15;
 
 use lib './lib';
 
@@ -34,10 +34,13 @@ my %newargs = (
 	timeout	=>	[ 'dog', 'cat' ]
 );
 
-$Net::EPP::Protocol::THRESHOLD = 10000000; # 10 MB
-eval {
-	$epp = Net::EPP::Registry::Nominet->new (%newargs);
-};
+# warnings if not using the svn net-epp. Avoid this!!!
+{
+	no warnings 'once';
+	$Net::EPP::Protocol::THRESHOLD = 10000000; # 10 MB
+}
+$epp = Net::EPP::Registry::Nominet->new (%newargs);
+
 SKIP: {
 	skip "No access to testbed from this IP address", 3 unless defined $epp;
 
@@ -54,7 +57,7 @@ SKIP: {
 }
 
 SKIP: {
-	skip "NOMTAG/NOMPASS not set", 7 unless (defined $ENV{NOMTAG} and defined $ENV{NOMPASS});
+	skip "NOMTAG/NOMPASS not set", 11 unless (defined $ENV{NOMTAG} and defined $ENV{NOMPASS});
 
 	isnt ($epp->login ($ENV{NOMTAG}, $ENV{NOMPASS}), undef, 'Login with good credentials');
 
@@ -73,6 +76,23 @@ SKIP: {
 	$newargs{login} = 1;
 	$epp = Net::EPP::Registry::Nominet->new (%newargs);
 	ok (defined $epp, 'Reconnect and Login with good credentials');
+	$epp->logout;
+	$newargs{login}    = 0;
+	$newargs{verify}   = 1;
+	$newargs{testssl}  = 1;
+	$newargs{ca_file}  = '/foo';
+	$epp = Net::EPP::Registry::Nominet->new (%newargs);
+	ok ((not defined $epp), 'Reconnect with duff SSL cert verification');
+	$newargs{ca_file}  = 't/ca.crt';
+	$epp = Net::EPP::Registry::Nominet->new (%newargs);
+	ok (defined $epp, 'Reconnect with good SSL cert verification');
+	$newargs{verify}   = 0;
+	$newargs{ciphers}  = 'duff';
+	$epp = Net::EPP::Registry::Nominet->new (%newargs);
+	ok ((not defined $epp), 'Reconnect with duff cipher list');
+	$newargs{ciphers}  = 'HIGH:!ADH:!MEDIUM:!LOW:!SSLv2:!EXP';
+	$epp = Net::EPP::Registry::Nominet->new (%newargs);
+	ok (defined $epp, 'Reconnect with good cipher list');
 };
 
 exit;

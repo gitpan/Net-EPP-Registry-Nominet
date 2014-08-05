@@ -10,19 +10,18 @@
 #        NOTES:  ---
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: register.t,v 1.1.1.1 2013/10/21 14:04:54 pete Exp $
+#      VERSION:  $Id: register.t,v 1.3 2014/08/04 17:35:12 pete Exp $
 #      CREATED:  06/02/13 16:30:11
-#     REVISION:  $Revision: 1.1.1.1 $
+#     REVISION:  $Revision: 1.3 $
 #===============================================================================
 
 use strict;
 use warnings;
 
 use Test::More;
-#use Data::Dumper; # Debug only
 
 if (defined $ENV{NOMTAG} and defined $ENV{NOMPASS}) {
-	plan tests => 18;
+	plan tests => 25;
 } else {
 	plan skip_all => 'Cannot connect to testbed without NOMTAG and NOMPASS';
 }
@@ -76,7 +75,6 @@ my $domain = {
 	}
 };
 
-#my ($expiry, $reason, $regid); # Temporary
 my ($res) = $epp->register ($domain);
 
 ok ($res, 'Domain registration with new account/contact');
@@ -98,6 +96,32 @@ is ($epp->get_code, 2201, 'Domain registration with non-existant account/contact
 $domain->{registrant} = $registrant->{id};
 ($res) = $epp->register ($domain);
 is ($epp->get_code, 1000, 'Domain registration with old account/contact');
+
+# Try same with other SLDs
+for my $sld (qw/org.uk me.uk uk/) {
+	$domain->{name} = "$now-b-$tag.$sld";
+	($res) = $epp->register ($domain);
+	is ($epp->get_code, 1000, "Domain registration under .$sld")
+		or warn $epp->get_reason ();
+}
+for my $sld (qw/net.uk ltd.uk plc.uk/) {
+	if ($sld eq 'plc.uk') {
+		$registrant->{'type'}           = 'PLC';
+		$domain->{registrant}           = $registrant;
+		$domain->{registrant}->{'type'} = 'PLC';
+		$domain->{registrant}->{id}     = "reg-$now-p";
+	}
+	$domain->{name} = "$now-b-$tag.$sld";
+	($res) = $epp->register ($domain);
+	is ($epp->get_code, 1001, "Domain registration under .$sld")
+		or warn $epp->get_reason ();
+}
+
+$domain->{name} = "duncan-$tag.uk";
+($res) = $epp->register ($domain);
+is ($epp->get_code, 2201, ".uk domain registration attempt without rights")
+	or warn $epp->get_reason ();
+
 
 # Tests to register contacts #####
 # Probably not really needed, but here for completeness ...
@@ -132,7 +156,7 @@ is ($epp->get_code, 1000, 'Standalone contact creation with int and loc info');
 my $nameserver = {
 	name	=>	"ns$now.foo.com",
 	addrs	=>	[
-		{ ip	=>	'10.2.2.1', version	=>	'v4' },
+		{ ip	=>	'99.199.99.199', version	=>	'v4' },
 	],
 };
 $epp->create_host ($nameserver);
@@ -141,14 +165,14 @@ is ($epp->get_code, 1000, 'Nameserver registration under .com');
 $epp->create_host ($nameserver);
 is ($epp->get_code, 2302, 'Duplicate nameserver registration under .com');
 
-$nameserver->{name} = "ns$now.jibber.slam.uk";
+$nameserver->{name} = "ns$now.banquo-$tag.co.uk";
 $epp->create_host ($nameserver);
 is ($epp->get_code, 1000, 'Nameserver registration under .uk');
 
 $domain->{name} = "$now-c-$tag.co.uk";
 $domain->{nameservers} = {
 	nsname0	=>	"ns$now.foo.com",
-	nsname1 =>	"ns$now.jibber.slam.uk"
+	nsname1 =>	"ns$now.banquo-$tag.co.uk"
 };
 ($res) = $epp->register ($domain);
 is ($epp->get_code, 1000, 'Domain registration with just-created nameservers');

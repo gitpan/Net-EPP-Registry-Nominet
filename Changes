@@ -1,4 +1,14 @@
-0.00_01 2013-12-09
+0.01_02 2014-08-04
+
+	- check_domain now returns a third item which is the rights holder 
+	  in the case of checking a SLD.
+    - Removed use of Exporter.
+	- Added the same SSL checking functionality as in Net::EPP::Simple.
+    - Updated test suite to adhere to more restrictive conditions imposed
+      by Nominet and to test new second-level registrations.
+    - Test suite updated to match changes in Nominet's testbed data set.
+
+0.01_01 2013-12-09
 
     - Fixed bug whereby low RAM machines might exhaust memory parsing
       Nominet's broken error message. Requires newest Net::EPP from svn.
