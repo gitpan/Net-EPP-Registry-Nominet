@@ -1,7 +1,7 @@
 
-Net::EPP::Registry::Nominet version 0.01_02
+Net::EPP::Registry::Nominet version 0.02
 
-Released: 4th August 2014
+Released: 16th August 2014
 
 
 INSTALLATION
@@ -43,6 +43,8 @@ compatible interface to Net::EPP::Simple so far as is practical.
 NEW IN THIS VERSION
 -------------------
 
+(since last production version - 0.01)
+Makefile.PL updated to include MIN_PERL_VERSION
 check_domain now returns a third item which is the rights holder 
 in the case of checking a SLD.
 Test suite updated to match changes in Nominet's testbed data set.
@@ -50,7 +52,12 @@ Removed use of Exporter.
 Added the same SSL checking functionality as in Net::EPP::Simple.
 Updated test suite to adhere to more restrictive conditions imposed
 by Nominet and to test new second-level registrations.
+Fixed bug whereby low RAM machines might exhaust memory parsing
+Nominet's broken error message. Requires newest Net::EPP from svn.
+See https://rt.cpan.org/Public/Bug/Display.html?id=90776
 
+(since last development version - 0.01_02)
+Makefile.PL updated to include MIN_PERL_VERSION
 
 DOCUMENTATION
 -------------
@@ -72,4 +79,4 @@ This software is copyright (c) 2013-2014 by Pete Houston. It is released
 under the Artistic Licence (version 2) and the GNU General Public Licence
 (version 2).
 
-$Id: README,v 1.5 2014/08/04 17:47:47 pete Exp $
+$Id: README,v 1.6 2014/08/16 17:05:13 pete Exp $

@@ -1,4 +1,4 @@
-#    $Id: Nominet.pm,v 1.6 2014/08/04 17:42:21 pete Exp $
+#    $Id: Nominet.pm,v 1.7 2014/08/16 17:02:04 pete Exp $
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ use vars qw($Error $Code $Message);
 
 BEGIN {
 	our ($VERSION, @ISA);
-	$VERSION    = '0.01_02';
+	$VERSION    = '0.02';
 	@ISA        = qw(Net::EPP::Simple Exporter);
 }
 

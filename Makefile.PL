@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.1.1.1 2013/10/21 14:04:54 pete Exp $
+# $Id: Makefile.PL,v 1.2 2014/08/16 17:05:50 pete Exp $
 use ExtUtils::MakeMaker;
 use strict;
 use warnings;
@@ -11,15 +11,22 @@ my %MF = (
 		'Test::More'	=>	'0',
 	},
 	LICENSE			=> 'perl',
+	MIN_PERL_VERSION => '5.6.0',
 	PREREQ_PM		=>	{
 		'Net::EPP'	=>	'0.19',
 		'Carp'		=>	'0',
 	},
 	VERSION_FROM    => 'lib/Net/EPP/Registry/Nominet.pm'
 );
-if ($ExtUtils::MakeMaker::VERSION lt 6.55) { delete $MF{BUILD_REQUIRES}; }
-if ($ExtUtils::MakeMaker::VERSION lt 6.31) { delete $MF{LICENSE}; }
+
+# Remove entries from the hash where version of ExtUtils::MakeMaker is
+# too old to support them
+if ($ExtUtils::MakeMaker::VERSION lt 6.55) { delete $MF{BUILD_REQUIRES};   }
+if ($ExtUtils::MakeMaker::VERSION lt 6.48) { delete $MF{MIN_PERL_VERSION}; }
+if ($ExtUtils::MakeMaker::VERSION lt 6.31) { delete $MF{LICENSE};          }
+
 WriteMakefile (%MF);
+
 unless (exists $ENV{NOMTAG} and exists $ENV{NOMPASS}) {
 	print <<EOT;
 
