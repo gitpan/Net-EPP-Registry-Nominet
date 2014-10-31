@@ -1,4 +1,4 @@
-#    $Id: Nominet.pm,v 1.7 2014/08/16 17:02:04 pete Exp $
+#    $Id: Nominet.pm,v 1.8 2014/10/31 17:24:06 pete Exp $
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -29,9 +29,7 @@ use constant EPP_XMLNS	=> 'urn:ietf:params:xml:ns:epp-1.0';
 use vars qw($Error $Code $Message);
 
 BEGIN {
-	our ($VERSION, @ISA);
-	$VERSION    = '0.02';
-	@ISA        = qw(Net::EPP::Simple Exporter);
+	our $VERSION = '0.02_01';
 }
 
 # file-scoped lexicals
@@ -261,9 +259,11 @@ sub login {
 		$login->svcs->appendChild($foo);
 	} else {
 		# Standard schemas and extensions
-		for my $ns ('epp', 'eppcom', 'domain', 'host', 'contact') {
+		for my $ns ('epp', 'eppcom', 'domain', 'host', 'contact', 'secDNS') {
 			my $el = $login->createElement('objURI');
-			$el->appendText("urn:ietf:params:xml:ns:$ns-$EPPVer");
+			my $ver = $EPPVer;
+			$ver = 1.1 if $ns eq 'secDNS';
+			$el->appendText("urn:ietf:params:xml:ns:$ns-$ver");
 			$login->svcs->appendChild($el);
 		}
 		# Extensions go here
@@ -530,7 +530,15 @@ registration.
 		nameservers  => {
 			'nsname0'  => "ns1.bar.co.uk",
 			'nsname1'  => "ns2.bar.co.uk"
-		}
+		},
+		sedDNS       => [
+			{
+				keyTag     => 123,
+				alg        => 5,
+				digestType => 1,
+				digest     => '8A9CEBB665B78E0142F1CEF47CC9F4205F600685'
+			}
+		]
 	};
 	my ($res) = $epp->create_domain ($domain);
 	if ($res) {
@@ -618,6 +626,21 @@ sub create_domain {
 	$pw->appendText ('dummyvalue');
 	$name->appendChild ($pw);
 	$obj->appendChild ($name);
+
+
+	# DNSSEC
+	my $exttype = 'secDNS';
+	if ($domain->{$exttype}) {
+		my @spec  = $self->spec ($exttype);
+		my $obj2  = $frame->addObject (@spec);
+		for my $dsrec (@{$domain->{$exttype}}) {
+			$self->_add_dsrec ($obj2, $frame, $dsrec);
+		}
+
+		my $extension = $frame->command->new ('extension');
+		$extension->appendChild ($obj2);
+		$frame->command->insertAfter ($extension, $frame->getCommandNode);
+	}
 
 	# Request complete, so send the frame
 	$frame->getCommandNode->appendChild ($obj);
@@ -741,6 +764,18 @@ sub _add_nsaddr {
 	return;
 }
 
+sub _add_dsrec {
+	my ($self, $name, $frame, $dsrec) = @_;
+	my $ds = $frame->createElement ('secDNS:dsData');
+	for my $key (qw/ keyTag alg digestType digest /) {
+		my $field = $frame->createElement ("secDNS:$key");
+		$field->appendText ($dsrec->{$key});
+		$ds->appendChild ($field);
+	}
+	$name->appendChild ($ds);
+	return;
+}
+
 =head1 Modify objects
 
 The domains, contacts and hosts once created can be modified using
@@ -769,6 +804,22 @@ This example adds and removes nameservers using the C<add> and C<rem> groups.
 You cannot use C<chg> to change nameservers or extension fields. The C<chg>
 entry is only used to move a domain between registrants with the same
 name.
+
+The C<add> and C<rem> groups are also used to add and remove DS records.
+eg:
+
+	my $changes = {
+		'name'         => 'foo.co.uk',
+		'add'          => {
+			secDNS => [{ 
+				keyTag     => 25103,
+				alg	       => 5,
+				digestType => 1,
+				digest     => '8A9CEBB665B78E0142F1CEF47CC9F4205F600685'
+			}]
+		}
+		'rem'          => {}
+	};
 
 The extension fields can only be set outside of the add, rem and chg
 fields. The supported extensions in this module are:
@@ -836,8 +887,26 @@ sub modify_domain {
 			$obj->appendChild ($name);
 		}
 	}
+	# DNSSEC
+	# Nominet does not support MaxSigLife which is the only possible use
+	# for 'chg', so do not cater for it here (yet).
+	# 
+	my $exttype = 'secDNS';
+	@spec  = $self->spec ($exttype);
+	my $obj2  = $frame->addObject (@spec);
+	for my $action ('rem', 'add') {
+		if ($data->{$action}->{$exttype}) {
+			$name = $frame->createElement ("$exttype:$action");
+			for my $dsrec (@{$data->{$action}->{$exttype}}) {
+				$self->_add_dsrec ($name, $frame, $dsrec);
+			}
+			$obj2->appendChild ($name);
+		}
+	}
+
 	my $extension = $frame->command->new ('extension');
 	$extension->appendChild ($obj);
+	$extension->appendChild ($obj2);
 	$frame->command->insertAfter ($extension, $frame->getCommandNode);
 
 	my $response = $self->_send_frame ($frame);
@@ -1088,6 +1157,7 @@ sub _info {
 
 	if ($type eq 'domain') {
 		my $extra = $response->getNode('domain-nom-ext:infData');
+		my $extra2 = $response->getNode('secDNS:infData');
 		return $self->_domain_infData_to_hash($infData, $extra);
 	} elsif ($type eq 'contact') {
 		my $this = $self->_contact_infData_to_hash($infData);
@@ -1277,6 +1347,12 @@ sub spec {
 		return ($type,
 			'http://www.nominet.org.uk/epp/xml/domain-nom-ext-1.2',
 			'http://www.nominet.org.uk/epp/xml/domain-nom-ext-1.2 domain-nom-ext-1.2.xsd');
+	}
+	if ($type eq 'secDNS') {
+		my $ver = 1.1;
+		return ($type,
+			"urn:ietf:params:xml:ns:secDNS-$ver",
+			"urn:ietf:params:xml:ns:secDNS-$ver secDNS-$ver.xsd");
 	}
 	if ($type eq 'contact') {
 		return ($type,

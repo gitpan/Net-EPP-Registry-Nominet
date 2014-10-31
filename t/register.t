@@ -10,9 +10,9 @@
 #        NOTES:  ---
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: register.t,v 1.3 2014/08/04 17:35:12 pete Exp $
+#      VERSION:  $Id: register.t,v 1.4 2014/10/31 17:20:51 pete Exp $
 #      CREATED:  06/02/13 16:30:11
-#     REVISION:  $Revision: 1.3 $
+#     REVISION:  $Revision: 1.4 $
 #===============================================================================
 
 use strict;
@@ -72,7 +72,15 @@ my $domain = {
 	nameservers	=>	{
 		'nsname0'	=>	"ns1.demetrius-$tag.co.uk",
 		'nsname1'	=>	"ns1.ariel-$tag.co.uk"
-	}
+	},
+	secDNS	=>	[
+		{
+			keyTag     => 25103,
+			alg	       => 5,
+			digestType => 1,
+			digest     => '8A9CEBB665B78E0142F1CEF47CC9F4205F600685'
+		}
+	]
 };
 
 my ($res) = $epp->register ($domain);

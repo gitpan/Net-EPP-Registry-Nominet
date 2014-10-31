@@ -1,13 +1,18 @@
+0.02_01 2014-10-31
+
+    - secDNS schemas, specs and tests added.
+    - removed @ISA.
+
 0.02 2014-08-16
 
     - Makefile.PL updated to include MIN_PERL_VERSION
 
 0.01_02 2014-08-04
 
-	- check_domain now returns a third item which is the rights holder 
-	  in the case of checking a SLD.
+    - check_domain now returns a third item which is the rights holder 
+      in the case of checking a SLD.
     - Removed use of Exporter.
-	- Added the same SSL checking functionality as in Net::EPP::Simple.
+    - Added the same SSL checking functionality as in Net::EPP::Simple.
     - Updated test suite to adhere to more restrictive conditions imposed
       by Nominet and to test new second-level registrations.
     - Test suite updated to match changes in Nominet's testbed data set.

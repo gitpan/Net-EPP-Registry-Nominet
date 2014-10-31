@@ -10,9 +10,9 @@
 #        NOTES:  ---
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: query.t,v 1.1.1.1 2013/10/21 14:04:54 pete Exp $
+#      VERSION:  $Id: query.t,v 1.2 2014/10/31 16:51:00 pete Exp $
 #      CREATED:  04/02/13 15:01:59
-#     REVISION:  $Revision: 1.1.1.1 $
+#     REVISION:  $Revision: 1.2 $
 #===============================================================================
 
 use strict;
@@ -21,7 +21,7 @@ use warnings;
 use Test::More;
 
 if (defined $ENV{NOMTAG} and defined $ENV{NOMPASS}) {
-	plan tests => 6;
+	plan tests => 7;
 } else {
 	plan skip_all => 'Cannot connect to testbed without NOMTAG and NOMPASS';
 }
@@ -45,6 +45,9 @@ my $ns  = $info->{ns};
 $info = $epp->domain_info ("duncan-$tag.co.uk", undef, 1);
 
 like ($info->{exDate}, qr/^\d\d\d\d-/, 'Correct domain info with follow');
+
+$info = $epp->domain_info ("ophelia-$tag.co.uk");
+like ($info->{exDate}, qr/^\d\d\d\d-/, 'Correct domain info with DNSSEC');
 
 # Contacts
 $info = $epp->contact_info ($reg);

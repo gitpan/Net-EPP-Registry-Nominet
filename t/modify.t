@@ -10,9 +10,9 @@
 #        NOTES:  ---
 #       AUTHOR:  Pete Houston (cpan@openstrike.co.uk)
 #      COMPANY:  Openstrike
-#      VERSION:  $Id: modify.t,v 1.3 2014/08/04 18:16:12 pete Exp $
+#      VERSION:  $Id: modify.t,v 1.4 2014/10/31 16:51:17 pete Exp $
 #      CREATED:  28/03/13 14:58:33
-#     REVISION:  $Revision: 1.3 $
+#     REVISION:  $Revision: 1.4 $
 #===============================================================================
 
 use strict;
@@ -22,7 +22,7 @@ use Data::Dumper;
 use Test::More;
 
 if (defined $ENV{NOMTAG} and defined $ENV{NOMPASS}) {
-	plan tests => 10;
+	plan tests => 13;
 } else {
 	plan skip_all => 'Cannot connect to testbed without NOMTAG and NOMPASS';
 }
@@ -75,6 +75,68 @@ ok ($epp->modify_domain ($okdomainname, $changes),
 
 $epp->modify_domain ($baddomainname, $changes);
 isnt ($epp->get_code, 1000, "Change nameservers on invalid domain");
+
+# Change DS records for a domain
+
+$changes = {
+	'add'	=>	{
+		'secDNS'	=>	[
+			{
+				keyTag     => 25102,
+				alg	       => 5,
+				digestType => 1,
+				digest     => '7A9CEBB665B78E0142F1CEF47CC9F4205F600685'
+			},
+		]
+	},
+	'rem'	=>	{},
+};
+
+ok ($epp->modify_domain ($okdomainname, $changes),
+	"Add DS record to domain");
+
+$changes = {
+	'rem'	=>	{
+		'secDNS'	=>	[
+			{
+				keyTag     => 25102,
+				alg	       => 5,
+				digestType => 1,
+				digest     => '7A9CEBB665B78E0142F1CEF47CC9F4205F600685'
+			},
+		]
+	},
+	'add'	=>	{
+		'secDNS'	=>	[
+			{
+				keyTag     => 25103,
+				alg	       => 5,
+				digestType => 1,
+				digest     => '8A9CEBB665B78E0142F1CEF47CC9F4205F600685'
+			},
+		]
+	},
+};
+
+ok ($epp->modify_domain ($okdomainname, $changes),
+	"Replace DS record for domain");
+
+$changes = {
+	'rem'	=>	{
+		'secDNS'	=>	[
+			{
+				keyTag     => 25103,
+				alg	       => 5,
+				digestType => 1,
+				digest     => '8A9CEBB665B78E0142F1CEF47CC9F4205F600685'
+			},
+		]
+	},
+	'add'	=>	{},
+};
+
+ok ($epp->modify_domain ($okdomainname, $changes),
+	"Remove DS record from domain");
 
 # change details of a registrant
 my $cont = {
